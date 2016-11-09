@@ -5,7 +5,7 @@ use threads;
 use threads::shared;
 use Digest::MD5 qw(md5_hex);
 
-my $numThreads = 4; # how many files to be processed in parallel
+my $numThreads = 3; # how many files to be processed in parallel
 my $recordBufferSize = 10000; # how many records to be written out at once
 my $soureDir = "original";
 my $outputDir = "processed";
@@ -59,7 +59,7 @@ sub Process_File {
 		close(OUTFILE);
 		close(FILE);
 
-		print(".");
+		printf "%.4f\n", (time - $start) / 60;
 	}
 }
 
@@ -68,19 +68,22 @@ sub Process_Record {
 	my $record = shift;
 
 	# get the values to be transformed
-	my $pan = substr($record, 5, 16); # get pan starting at col5
-	#my $ssn = substr($record, 110, 128);
-	#my $lastname = ...
+	my $pan = substr($record, 5, 16); # get pan starting at col 5
+	my $ssn = substr($record, 20, 28); # get ssn starting at col 20
+	my $lastname = substr($record, 30, 50); # get lastname starting at col 30
+	# ...
 
 	# do the transformations
-	my $hashedPan = md5_hex($pan); # hash the pan
-	#(my $maskedSsn = $ssn) =~ s/^...../XXXXX/; # mask first 6 of the ssn
-	#my $fakeLastname = ...
+	my $hashedPan = md5_hex($pan);
+	my $hashedSsn = md5_hex($ssn);
+	my $hashedLastname = md5_hex($lastname);
+	# ...
 
 	# replace original values
 	$record =~ s/$pan/$hashedPan/;
-	#$record =~ s/$ssn/$maskedSsn/;
-	#$record =~ s/$lastname/$fakeLastName/;
+	$record =~ s/$ssn/$hashedSsn/;
+	$record =~ s/$lastname/$hashedLastname/;
+	# ...
 
 	return $record;
 }
