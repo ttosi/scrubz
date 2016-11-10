@@ -5,16 +5,45 @@ use threads;
 use threads::shared;
 use Digest::MD5 qw(md5_hex);
 
-my $numThreads = 3; # how many files to be processed in parallel
+my $numThreads = 3; # how many files to be processed in parallel (use number of cores)
 my $recordBufferSize = 10000; # how many records to be written out at once
-my $soureDir = "original";
-my $outputDir = "processed";
 
-local $| = 1; # turn on auto-flush so output is displayed immediately
+my $soureDir = "source";
+my $processedDir = "processed";
+
+local $| = 1; # turn on auto-flush so console output is displayed immediately
 my $start = time; # start the execution timer
 
-my @files:shared = glob($soureDir . '/*'); # get list of files in the soureDir
-my @threads = 1..$numThreads; # create array for the number of threads defined
+my @files:shared = glob($soureDir . '/*.txt'); # get list of files in the soureDir
+my @threads = 1..$numThreads; # create array that holds the number of threads defined
+
+# primary processing logic for a single record.
+# this routine will replace the values *inline*.
+# no memory is wasted allocating memory for a new record.
+sub Process_Record {
+	my $record = shift;
+
+	# get the values to be transformed. because the file is fixed width,
+	# this is a manageable way to break out the values
+	my $pan = substr($record, 0, 16); # get pan starting at col 5
+	my $lname = substr($record, 34, 9); # get name starting at col 30
+	my $ssn = substr($record, 56, 9); # get ssn starting at col 20
+	# ...
+
+	# do the hashing
+	my $hashedPan = md5_hex($pan);
+	my $hashedName = md5_hex($lname);
+	my $hashedSsn = md5_hex($ssn);
+	# ...
+
+	# replace original values with the hashed ones
+	$record =~ s/$pan/$hashedPan/;
+	$record =~ s/$lname/$hashedName/;
+	$record =~ s/$ssn/$hashedSsn/;
+	# ...
+
+	return $record;
+}
 
 # create and start the threads
 foreach(@threads) {
@@ -33,13 +62,13 @@ sub Process_File {
 		my $inFile = pop(@files);
 		my @recordBuffer;
 
-		(my $outFile = $inFile) =~ s/$soureDir/$outputDir/;
+		(my $outFile = $inFile) =~ s/$soureDir/$processedDir/;
 
-		open(FILE, $inFile);
+		open(INFILE, $inFile);
 		open(OUTFILE, ">>$outFile");
 
-		# loops through the records
-		while(<FILE>) {
+		# loop through the records
+		while(<INFILE>) {
 			# process the current record and push it onto the buffer
 			push(@recordBuffer, Process_Record($_));
 
@@ -57,35 +86,10 @@ sub Process_File {
 		}
 
 		close(OUTFILE);
-		close(FILE);
+		close(INFILE);
 
-		printf "%.4f\n", (time - $start) / 60;
+		printf "%.4f m mins\n", (time - $start) / 60;
 	}
-}
-
-# processing logic for a single record
-sub Process_Record {
-	my $record = shift;
-
-	# get the values to be transformed
-	my $pan = substr($record, 5, 16); # get pan starting at col 5
-	my $ssn = substr($record, 20, 28); # get ssn starting at col 20
-	my $lastname = substr($record, 30, 50); # get lastname starting at col 30
-	# ...
-
-	# do the transformations
-	my $hashedPan = md5_hex($pan);
-	my $hashedSsn = md5_hex($ssn);
-	my $hashedLastname = md5_hex($lastname);
-	# ...
-
-	# replace original values
-	$record =~ s/$pan/$hashedPan/;
-	$record =~ s/$ssn/$hashedSsn/;
-	$record =~ s/$lastname/$hashedLastname/;
-	# ...
-
-	return $record;
 }
 
 my $duration = (time - $start) / 60;
