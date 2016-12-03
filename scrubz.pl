@@ -3,9 +3,11 @@ use strict;
 use warnings;
 use threads;
 use threads::shared;
-use Digest::MD5 qw(md5_hex);
+#use Digest::MD5 qw(md5_hex);
+use Digest::SHA qw(sha512_hex);
 
-my $numThreads = 3; # how many files to be processed in parallel (use number of cores)
+
+my $numThreads = 4; # how many files to be processed in parallel (use number of cores)
 my $recordBufferSize = 10000; # how many records to be written out at once
 
 my $soureDir = "source";
@@ -26,20 +28,21 @@ sub Process_Record {
 	# get the values to be transformed. because the file is fixed width,
 	# this is a manageable way to break out the values
 	my $pan = substr($record, 0, 16); # get pan starting at col 5
-	my $lname = substr($record, 34, 9); # get name starting at col 30
-	my $ssn = substr($record, 56, 9); # get ssn starting at col 20
+	#my $lname = substr($record, 34, 9); # get name starting at col 30
+	#my $ssn = substr($record, 56, 9); # get ssn starting at col 20
 	# ...
 
 	# do the hashing
-	my $hashedPan = md5_hex($pan);
-	my $hashedName = md5_hex($lname);
-	my $hashedSsn = md5_hex($ssn);
+	#my $hashedPan = md5_hex($pan);
+	my $hashedPan = sha512_hex($pan);
+	#my $hashedName = md5_hex($lname);
+	#my $hashedSsn = md5_hex($ssn);
 	# ...
 
 	# replace original values with the hashed ones
 	$record =~ s/$pan/$hashedPan/;
-	$record =~ s/$lname/$hashedName/;
-	$record =~ s/$ssn/$hashedSsn/;
+	#$record =~ s/$lname/$hashedName/;
+	#$record =~ s/$ssn/$hashedSsn/;
 	# ...
 
 	return $record;
