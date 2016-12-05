@@ -13,7 +13,6 @@ for(1..15) {
 
 	for(1..200000) {
 		print OUT $file;
-		#print "$_\n";
 	}
 	close(OUT);
 	print "data$_.txt\n";
