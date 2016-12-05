@@ -29,6 +29,8 @@ foreach(@threads) {
 	$_->join();
 }
 
+print "Processing scalar(@files) using $numThreads threads\n";
+
 sub Process_File {
 	# @file is a shared array. Each thread will continue
 	# to pop a file until they are all processed
