@@ -19,6 +19,8 @@ my $start = time; # start the execution timer
 my @files:shared = glob($soureDir . '/*.txt'); # get list of files in the soureDir
 my @threads = 1..$numThreads; # create array that holds the number of threads defined
 
+print "Processing " . scalar(@files) . "using $numThreads threads\n";
+
 # create and start the threads
 foreach(@threads) {
 	$_ = threads->create("Process_File");
@@ -28,8 +30,6 @@ foreach(@threads) {
 foreach(@threads) {
 	$_->join();
 }
-
-print "Processing scalar(@files) using $numThreads threads\n";
 
 sub Process_File {
 	# @file is a shared array. Each thread will continue
