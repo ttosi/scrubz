@@ -9,7 +9,6 @@ use Digest::SHA qw(sha512_hex);
 my $numThreads = 4; # how many files to be processed in parallel (use number of cores)
 my $recordBufferSize = 10000; # how many records to be written out at once
 my $seed = "958102fc79354a718b1ee220498b153cc058da7699634fb1a927ab65d031c45c";
-my @fileTimes = ();
 
 my $soureDir = "source";
 my $processedDir = "processed";
@@ -64,9 +63,6 @@ sub Process_File {
 		close(OUTFILE);
 		close(INFILE);
 
-		my $fileProcessingTime = (time - $fileTime) / 60;
-		push(@fileTimes, $fileProcessingTime);
-
 		printf "%.2f mins (%.2f mins)\n", (time - $start) / 60, $fileProcessingTime;
 	}
 }
@@ -90,9 +86,4 @@ sub Process_Record {
 	return $record;
 }
 
-my $duration = (time - $start) / 60;
-my $sum = eval join '+', @fileTimes;
-my $average = $sum / scalar(@fileTimes);
-
-printf "\nProcessing completed in %.2f minutes\n", $duration;
-printf "Average file processing time: %.2f minutes\n", $average;
+printf "\nProcessing completed in %.2f minutes\n", (time - $start) / 60;
