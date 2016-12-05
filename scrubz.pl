@@ -7,7 +7,7 @@ use Digest::SHA qw(sha512_hex);
 
 
 my $numThreads = 4; # how many files to be processed in parallel (use number of cores)
-my $recordBufferSize = 10000; # how many records to be written out at once
+my $recordBufferSize = 100000; # how many records to be written out at once
 my $seed = "958102fc79354a718b1ee220498b153cc058da7699634fb1a927ab65d031c45c";
 
 my $soureDir = "source";
