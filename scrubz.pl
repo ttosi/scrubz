@@ -6,7 +6,7 @@ use threads::shared;
 use Digest::SHA qw(sha512_hex);
 
 my $numThreads = 4; # how many files to be processed in parallel (use number of cores)
-my $recordBufferSize = 500000; # how many records to be written out at once
+my $recordBufferSize = 100000; # how many records to be written out at once
 my $seed = "c058da7699634fb1a927ab65d031c45c";
 
 my $soureDir = "source";
@@ -17,8 +17,9 @@ my $start = time; # start the execution timer
 
 my @files:shared = glob($soureDir . '/*.txt'); # get list of files in the soureDir
 my @threads = 1..$numThreads; # create array that holds the number of threads defined
+my $numFiles = scalar(@files)
 
-print "Processing " . scalar(@files) . " files using $numThreads threads\n";
+print "Processing $numFiles files using $numThreads threads\n";
 
 # create and start the threads
 foreach(@threads) {
@@ -87,7 +88,6 @@ sub Process_Record {
 	return $record;
 }
 
-
 my $duration = (time - $start) / 60;
-printf "Average file processed time %.2f minutes\n", $duration / scalar(@files);
+printf "Average file processed time %.2f minutes\n", $duration / $numFiles;
 printf "Processing completed in %.2f minutes\n", $duration;
