@@ -3,7 +3,7 @@ use strict;
 use warnings;
 
 local $/=undef;
-open(FILE, "townado.txt");
+open(FILE, "testdata.txt");
 
 my $file = <FILE>;
 close(FILE);
