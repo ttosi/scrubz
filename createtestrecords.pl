@@ -8,7 +8,7 @@ open(FILE, "testdata.txt");
 my $file = <FILE>;
 close(FILE);
 
-for(1..15) {
+for(1..2) {
 	open(OUT, ">>source/data$_.txt");
 
 	for(1..200000) {
