@@ -19,7 +19,7 @@ my $start = time; # start the execution timer
 my @files:shared = glob($soureDir . '/*.txt'); # get list of files in the soureDir
 my @threads = 1..$numThreads; # create array that holds the number of threads defined
 
-print "Processing " . scalar(@files) . "using $numThreads threads\n";
+print "Processing " . scalar(@files) . " files using $numThreads threads\n";
 
 # create and start the threads
 foreach(@threads) {
@@ -89,4 +89,4 @@ sub Process_Record {
 }
 
 my $duration = (time - $start) / 60;
-printf "\nProcessing completed in %.2f minutes\n", $duration;
+printf "Processing completed in %.2f minutes\n", $duration;
