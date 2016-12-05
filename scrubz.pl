@@ -63,7 +63,7 @@ sub Process_File {
 		close(OUTFILE);
 		close(INFILE);
 
-		printf "%.2f mins (%.2f mins)\n", (time - $start) / 60, $fileProcessingTime;
+		printf "%.2f mins (%.2f mins)\n", (time - $start) / 60, (time - $fileTime) / 60;
 	}
 }
 
@@ -86,4 +86,5 @@ sub Process_Record {
 	return $record;
 }
 
-printf "\nProcessing completed in %.2f minutes\n", (time - $start) / 60;
+my $duration = (time - $start) / 60;
+printf "\nProcessing completed in %.2f minutes\n", $duration;
