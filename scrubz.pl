@@ -17,7 +17,7 @@ my $start = time; # start the execution timer
 
 my @files:shared = glob($soureDir . '/*.txt'); # get list of files in the soureDir
 my @threads = 1..$numThreads; # create array that holds the number of threads defined
-my $numFiles = scalar(@files)
+my $numFiles = scalar(@files);
 
 print "Processing $numFiles files using $numThreads threads\n";
 
