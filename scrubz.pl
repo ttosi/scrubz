@@ -65,7 +65,7 @@ sub Process_File {
 		close(INFILE);
 
 		my $fileProcessingTime = (time - $fileTime) / 60;
-		@fileTimes.push($fileProcessingTime);
+		push(@fileTimes, $fileProcessingTime);
 
 		printf "%.2f mins (%.2f mins)\n", (time - $start) / 60, $fileProcessingTime;
 	}
