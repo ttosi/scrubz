@@ -87,5 +87,7 @@ sub Process_Record {
 	return $record;
 }
 
+
 my $duration = (time - $start) / 60;
+printf "Average file processed time %.2f minutes\n", $duration / scalar(@files);
 printf "Processing completed in %.2f minutes\n", $duration;
