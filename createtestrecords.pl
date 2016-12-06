@@ -8,10 +8,10 @@ open(FILE, "testdata.txt");
 my $file = <FILE>;
 close(FILE);
 
-for(1..4) {
+for(1..1) {
 	open(OUT, ">>source/data$_.txt");
 
-	for(1..900000) {
+	for(1..900000) { # 900000 = 16GB files
 		print OUT $file;
 	}
 	close(OUT);

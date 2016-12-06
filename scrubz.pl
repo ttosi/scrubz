@@ -22,6 +22,24 @@ my $numFiles = scalar(@files);
 
 print "Processing $numFiles files using $numThreads threads\n";
 
+# read in columns definitions
+my @columnNames = ();
+my @columnIndexes = ();
+#my @columns;
+
+# open(COLDEFS, "columndefs.txt");
+open(my $fh, "<", "columndefs.txt");
+while(<$fh>) {
+	chomp;
+	my($columnName, $index) = split(':', $_, 2);
+
+	push(@columnNames, $columnName);
+	push(@columnIndexes, $index);
+}
+close($fh);
+
+my $header = join '|', @columnNames;
+
 # create and start the threads
 foreach(@threads) {
 	$_ = threads->create("Process_File");
@@ -45,10 +63,14 @@ sub Process_File {
 		open(INFILE, $inFile);
 		open(OUTFILE, ">>$outFile");
 
+		# add column headers
+		print OUTFILE "$header\r\n";
+
 		# loop through the records
 		while(<INFILE>) {
 			# process the current record and push it onto the buffer
-			push(@recordBuffer, Process_Record($_));
+			my $record = Process_Record($_);
+			push(@recordBuffer, $record);
 
 			# only write to disk every N records
 			if(scalar(@recordBuffer) == $recordBufferSize) {
@@ -78,18 +100,25 @@ sub Process_File {
 # no memory is wasted allocating memory for a new record.
 sub Process_Record {
 	my $record = shift;
+	my $outRecord;
 
-	# get the values to be transformed. because the file is fixed width,
-	# this is a manageable way to break out the values
-	my $pan = substr($record, 0, 16); # get the card number
+	my $pan = substr($record, 0, 19); # get the card number
+	$pan =~ s/\s+$//; # right trim
+	my $hashedPan = uc sha512_hex($salt . $pan);
+	$outRecord .= "$hashedPan|";
 
-	# do the hashing
-	my $hashedPan = uc sha512_hex($pan . $salt);
+	my $runningIndex = 19;
+	for (1 .. $#columnIndexes) {
+		print "$columnIndexes[$_]\n";
+		my $data = substr($record, $runningIndex, $columnIndexes[$_]);
+		#print "$data\n";
+		$data =~ s/\s+$//;
+		#
+		$outRecord .= "$data|";
+		$runningIndex += $columnIndexes[$_];
+	}
 
-	# replace original values with the hashed ones
-	$record =~ s/$pan/$hashedPan/;
-
-	return $record;
+	return $outRecord;
 }
 
 my $totalFileProcessingTime = 0;
