@@ -8,6 +8,7 @@ use Digest::SHA qw(sha512_hex);
 my $numThreads = 8; # how many files to be processed in parallel (use number of cores)
 my $recordBufferSize = 10000; # how many records to be written out at once
 my $salt = "c058da7699634fb1a927ab65d031c45c5d5a2b7b2ab24bd191989cd2362884d1";
+my $delimeter = '|';
 my @processingTimes:shared = ();
 
 my $soureDir = "source";
@@ -21,11 +22,12 @@ my @threads = 1..$numThreads; # create array that holds the number of threads de
 my $numFiles = scalar(@files);
 
 print "Processing $numFiles files using $numThreads threads\n";
+my $t = localtime;
+print "Started at $t\n";
 
 # read in columns definitions
 my @columnNames = ();
 my @columnIndexes = ();
-#my @columns;
 
 # open(COLDEFS, "columndefs.txt");
 open(my $fh, "<", "columndefs.txt");
@@ -38,7 +40,7 @@ while(<$fh>) {
 }
 close($fh);
 
-my $header = join '|', @columnNames;
+my $header = join $delimeter, @columnNames;
 
 # create and start the threads
 foreach(@threads) {
@@ -101,21 +103,23 @@ sub Process_File {
 sub Process_Record {
 	my $record = shift;
 	my $outRecord;
+	my @elements;
 
 	my $pan = substr($record, 0, 19); # get the card number
 	$pan =~ s/\s+$//; # right trim
 	my $hashedPan = uc sha512_hex($salt . $pan);
-	$outRecord .= "$hashedPan|";
+	push(@elements, $hashedPan);
 
 	my $runningIndex = 19;
 	for (1 .. $#columnIndexes) {
 		my $data = substr($record, $runningIndex, $columnIndexes[$_]);
 		$data =~ s/\s+$//;
 
-		$outRecord .= "$data|";
+		push(@elements, $data);
 		$runningIndex += $columnIndexes[$_];
 	}
 
+	$outRecord = join $delimeter, @elements;
 	return $outRecord . "\n";
 }
 
