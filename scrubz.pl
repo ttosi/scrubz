@@ -6,8 +6,8 @@ use threads::shared;
 use Digest::SHA qw(sha512_hex);
 
 my $numThreads = 8; # how many files to be processed in parallel (use number of cores)
-my $recordBufferSize = 50000; # how many records to be written out at once
-my $seed = "c058da7699634fb1a927ab65d031c45c";
+my $recordBufferSize = 10000; # how many records to be written out at once
+my $salt = "c058da7699634fb1a927ab65d031c45c5d5a2b7b2ab24bd191989cd2362884d1";
 my @processingTimes:shared = ();
 
 my $soureDir = "source";
@@ -84,7 +84,7 @@ sub Process_Record {
 	my $pan = substr($record, 0, 16); # get the card number
 
 	# do the hashing
-	my $hashedPan = sha512_hex($pan . $seed);
+	my $hashedPan = uc sha512_hex($pan . $salt);
 
 	# replace original values with the hashed ones
 	$record =~ s/$pan/$hashedPan/;
@@ -93,8 +93,6 @@ sub Process_Record {
 }
 
 my $totalFileProcessingTime = 0;
-print "@processingTimes\n";
-
 foreach(@processingTimes) {
 	$totalFileProcessingTime += $_;
 }

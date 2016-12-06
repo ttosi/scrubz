@@ -11,7 +11,7 @@ close(FILE);
 for(1..4) {
 	open(OUT, ">>source/data$_.txt");
 
-	for(1..200000) {
+	for(1..900000) {
 		print OUT $file;
 	}
 	close(OUT);
