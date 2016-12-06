@@ -11,7 +11,7 @@ close(FILE);
 for(1..1) {
 	open(OUT, ">>source/data$_.txt");
 
-	for(1..900000) { # 900000 = 16GB files
+	for(1..20) { # 900000 = 16GB files
 		print OUT $file;
 	}
 	close(OUT);

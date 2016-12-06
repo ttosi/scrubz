@@ -116,7 +116,7 @@ sub Process_Record {
 		$runningIndex += $columnIndexes[$_];
 	}
 
-	return $outRecord;
+	return $outRecord . "\n";
 }
 
 my $totalFileProcessingTime = 0;
