@@ -109,11 +109,9 @@ sub Process_Record {
 
 	my $runningIndex = 19;
 	for (1 .. $#columnIndexes) {
-		print "$columnIndexes[$_]\n";
 		my $data = substr($record, $runningIndex, $columnIndexes[$_]);
-		#print "$data\n";
 		$data =~ s/\s+$//;
-		#
+
 		$outRecord .= "$data|";
 		$runningIndex += $columnIndexes[$_];
 	}
