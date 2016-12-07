@@ -6,18 +6,21 @@ use threads::shared;
 use Digest::SHA qw(sha512_hex);
 
 my $numThreads = 8; # how many files to be processed in parallel (use number of cores)
-my $recordBufferSize = 1000; # how many records to be written out at once
+my $recordBufferSize = 10000; # how many records to be written out at once
 my $salt = "c058da7699634fb1a927ab65d031c45c5d5a2b7b2ab24bd191989cd2362884d1";
 my $delimeter = '|';
-my @processingTimes:shared;
+my @processingTimes:shared = ();
+my @columnNames;
+my @columnIndexes;
 
-my $soureDir = "source";
+my $sourceDir = "source";
 my $processedDir = "processed";
+my $columnDefFile = "columndefs.txt";
 
 local $| = 8; # turn on auto-flush so console output is displayed immediately
 my $start = time; # start the execution timer
 
-my @files:shared = glob($soureDir . '/*.txt'); # get list of files in the soureDir
+my @files:shared = glob($sourceDir . '/*.txt'); # get list of files in the soureDir
 my @threads = 1..$numThreads; # create array that holds the number of threads defined
 my $numFiles = scalar(@files);
 my $template;
@@ -26,12 +29,8 @@ print "Processing $numFiles files using $numThreads threads\n";
 my $t = localtime;
 print "Started at $t\n";
 
-# read in columns definitions
-my @columnNames;
-my @columnIndexes;
-
-# open(COLDEFS, "columndefs.txt");
-open(my $fh, "<", "columndefs.txt");
+# read in column definitions and
+open(my $fh, "<", $columnDefFile);
 while(<$fh>) {
 	chomp;
 	my($columnName, $index) = split(':', $_, 2);
@@ -44,6 +43,7 @@ close($fh);
 my $header = join $delimeter, @columnNames;
 chomp($header);
 
+# create the template used to process
 $template = "A" . join "A", @columnIndexes;
 
 # create and start the threads
@@ -64,7 +64,7 @@ sub Process_File {
 		my @recordBuffer;
 		my $fileTime = time; # start the per file processing timer
 
-		(my $outFile = $inFile) =~ s/$soureDir/$processedDir/;
+		(my $outFile = $inFile) =~ s/$sourceDir/$processedDir/;
 
 		open(INFILE, $inFile);
 		open(OUTFILE, ">>$outFile");
@@ -74,9 +74,17 @@ sub Process_File {
 
 		# loop through the records
 		while(<INFILE>) {
-			# process the current record and push to the buffer
-			my $record = Process_Record($_);
-			push(@recordBuffer, $record);
+			# process the current record and push it onto the buffer
+			#my $record = Process_Record($_);
+
+			my ($pan, @data) = unpack($template, $_);
+
+			$_ = join '|', @data;
+			my $hashedPan = uc sha512_hex($salt . $pan);
+
+			#return $hashedPan . '|' . $_ . "\n";
+
+			push(@recordBuffer, $hashedPan . '|' . $_ . "\n");
 
 			# only write to disk every N records
 			if(scalar(@recordBuffer) == $recordBufferSize) {
@@ -102,15 +110,15 @@ sub Process_File {
 }
 
 # todo comment
-sub Process_Record {
-	my $line = shift;
-	my ($pan, @data) = unpack($template, $line);
-
-	$line = join '|', @data;
-	my $hashedPan = uc sha512_hex($salt . $pan);
-
-	return $hashedPan . '|' . $line . "\n";
-}
+# sub Process_Record {
+# 	my $line = shift;
+# 	my ($pan, @data) = unpack($template, $line);
+#
+# 	$line = join '|', @data;
+# 	my $hashedPan = uc sha512_hex($salt . $pan);
+#
+# 	return $hashedPan . '|' . $line . "\n";
+# }
 
 my $totalFileProcessingTime = 0;
 foreach(@processingTimes) {
