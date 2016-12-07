@@ -6,10 +6,10 @@ use threads::shared;
 use Digest::SHA qw(sha512_hex);
 
 my $numThreads = 8; # how many files to be processed in parallel (use number of cores)
-my $recordBufferSize = 10000; # how many records to be written out at once
+my $recordBufferSize = 1000; # how many records to be written out at once
 my $salt = "c058da7699634fb1a927ab65d031c45c5d5a2b7b2ab24bd191989cd2362884d1";
 my $delimeter = '|';
-my @processingTimes:shared = ();
+my @processingTimes:shared;
 
 my $soureDir = "source";
 my $processedDir = "processed";
@@ -74,7 +74,7 @@ sub Process_File {
 
 		# loop through the records
 		while(<INFILE>) {
-			# process the current record and push it onto the buffer
+			# process the current record and push to the buffer
 			my $record = Process_Record($_);
 			push(@recordBuffer, $record);
 
