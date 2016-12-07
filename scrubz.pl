@@ -70,10 +70,13 @@ sub Process_File {
 
 		(my $outFile = $inFile) =~ s/$sourceDir/$processedDir/;
 
+		# open the in and out files using Gunzip and Gzip,
+		# this allows the files to be streamed directly from
+		# and in to compressed files.
 		my $inHandle = new IO::Uncompress::Gunzip $inFile;
 		my $outHandle = new IO::Compress::Gzip $outFile;
 
-		# add column headers
+		# write out column headers
 		print $outHandle "$header\n";
 
 		# loop through the records
@@ -82,6 +85,7 @@ sub Process_File {
 			my ($pan, @data) = unpack($template, $_);
 			$_ = join '|', @data;
 
+			# hash the pan, salt first
 			my $hashedPan = uc sha512_hex($salt . $pan);
 
 			push(@recordBuffer, $hashedPan . '|' . $_ . "\n");
