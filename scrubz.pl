@@ -4,8 +4,8 @@ use warnings;
 use threads;
 use threads::shared;
 use Digest::SHA qw(sha512_hex);
-#use IO::Compress::Gzip;
-#use IO::Uncompress::Gunzip;
+use IO::Compress::Gzip qw(gzip $GzipError);
+use IO::Uncompress::Gunzip;
 
 my $salt = "c058da7699634fb1a927ab65d031c45c5d5a2b7b2ab24bd191989cd2362884d1";
 my $sourceDir = "source";
@@ -15,7 +15,7 @@ my $columnDefFile = "columndefs.txt";
 my $numThreads = 8; # how many files to be processed in parallel (use number of cores)
 my $recordBufferSize = 10000; # how many records to be written out at once
 my $delimeter = '|';
-my $compressFiles = 1;
+my $compressFiles = 0;
 
 my @processingTimes:shared = ();
 my @columnNames;
@@ -55,6 +55,7 @@ foreach(@threads) {
 	$_ = threads->create("Process_File");
 }
 
+
 # join them so the app will run until all threads are done
 foreach(@threads) {
 	$_->join();
@@ -70,14 +71,16 @@ sub Process_File {
 
 		(my $outFile = $inFile) =~ s/$sourceDir/$processedDir/;
 
-		open(INFILE, $inFile);
-		open(OUTFILE, ">>$outFile");
+		#open(INFILE, $inFile);
+		my $inHandle = new IO::Uncompress::Gunzip $inFile;
+		#open(OUTFILE, ">>$outFile");
+		my $outHandle = new IO::Compress::Gzip $outFile;
 
 		# add column headers
-		print OUTFILE "$header\n";
+		print $outHandle "$header\n";
 
 		# loop through the records
-		while(<INFILE>) {
+		while(<$inHandle>) {
 			# process the current record and push it onto the buffer
 			my ($pan, @data) = unpack($template, $_);
 			$_ = join '|', @data;
@@ -88,7 +91,7 @@ sub Process_File {
 
 			# only write to disk every N records
 			if(scalar(@recordBuffer) == $recordBufferSize) {
-				print OUTFILE @recordBuffer;
+				print $outHandle @recordBuffer;
 				@recordBuffer = ();
 			}
 		}
@@ -96,23 +99,24 @@ sub Process_File {
 		# when the loop has finsihed, write out anything
 		# left over in the buffer
 		if(scalar(@recordBuffer) > 0) {
-			print OUTFILE @recordBuffer;
+			print $outHandle @recordBuffer;
 		}
 
-		close(INFILE);
+		close($inHandle);
 
-		if($compressFiles) {
-			open (OUTFILE, "| gzip -c > $outFile.gz");
-			unlink($outFile);
-		}
+		# if($compressFiles) {
+		# 	open (OUTFILE, "| gzip -c > $outFile.gz");
+		# 	unlink($outFile);
+		# }
 
-		close(OUTFILE);
+		close($outHandle);
 
 		my $processingTime = (time - $fileTime) / 60;
 		push(@processingTimes, $processingTime);
 
 		$outFile =~ s/$processedDir\///;
-		printf "-- $outFile processed in %.2f mins (%s compression) \n", $processingTime, $compressFiles ? 'with' : 'without';
+		#printf "-- $outFile processed in %.2f mins (%s compression) \n";#, $processingTime, $compressFiles ? 'with' : 'without';
+		printf "-- $outFile processed in %.2f mins\n", $processingTime;
 	}
 }
 
