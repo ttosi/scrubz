@@ -16,6 +16,7 @@ my $processedDir = "processed";
 
 local $| = 1; # turn on auto-flush so console output is displayed immediately
 my $start = time; # start the execution timer
+#$/ = "\r\n";
 
 my @files:shared = glob($soureDir . '/*.txt'); # get list of files in the soureDir
 my @threads = 1..$numThreads; # create array that holds the number of threads defined
@@ -26,21 +27,24 @@ my $t = localtime;
 print "Started at $t\n";
 
 # read in columns definitions
-my @columnNames = ();
-my @columnIndexes = ();
+my @columnNames;
+my @columnIndexes;
 
 # open(COLDEFS, "columndefs.txt");
 open(my $fh, "<", "columndefs.txt");
 while(<$fh>) {
 	chomp;
 	my($columnName, $index) = split(':', $_, 2);
-
+	print "$index\n";
+	#chomp($columnName);
 	push(@columnNames, $columnName);
 	push(@columnIndexes, $index);
 }
 close($fh);
 
+
 my $header = join $delimeter, @columnNames;
+chomp($header);
 
 # create and start the threads
 foreach(@threads) {
@@ -66,7 +70,7 @@ sub Process_File {
 		open(OUTFILE, ">>$outFile");
 
 		# add column headers
-		print OUTFILE "$header\r\n";
+		print OUTFILE "$header\n";
 
 		# loop through the records
 		while(<INFILE>) {
