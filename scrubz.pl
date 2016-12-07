@@ -55,7 +55,6 @@ foreach(@threads) {
 	$_ = threads->create("Process_File");
 }
 
-
 # join them so the app will run until all threads are done
 foreach(@threads) {
 	$_->join();
@@ -71,9 +70,7 @@ sub Process_File {
 
 		(my $outFile = $inFile) =~ s/$sourceDir/$processedDir/;
 
-		#open(INFILE, $inFile);
 		my $inHandle = new IO::Uncompress::Gunzip $inFile;
-		#open(OUTFILE, ">>$outFile");
 		my $outHandle = new IO::Compress::Gzip $outFile;
 
 		# add column headers
@@ -102,20 +99,13 @@ sub Process_File {
 			print $outHandle @recordBuffer;
 		}
 
-		close($inHandle);
-
-		# if($compressFiles) {
-		# 	open (OUTFILE, "| gzip -c > $outFile.gz");
-		# 	unlink($outFile);
-		# }
-
 		close($outHandle);
+		close($inHandle);
 
 		my $processingTime = (time - $fileTime) / 60;
 		push(@processingTimes, $processingTime);
 
 		$outFile =~ s/$processedDir\///;
-		#printf "-- $outFile processed in %.2f mins (%s compression) \n";#, $processingTime, $compressFiles ? 'with' : 'without';
 		printf "-- $outFile processed in %.2f mins\n", $processingTime;
 	}
 }
