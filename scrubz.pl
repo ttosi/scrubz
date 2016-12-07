@@ -20,7 +20,7 @@ my $columnDefFile = "columndefs.txt";
 local $| = 8; # turn on auto-flush so console output is displayed immediately
 my $start = time; # start the execution timer
 
-my @files:shared = glob($sourceDir . '/*.txt'); # get list of files in the soureDir
+my @files:shared = glob($sourceDir . '/*'); # get list of files in the soureDir
 my @threads = 1..$numThreads; # create array that holds the number of threads defined
 my $numFiles = scalar(@files);
 my $template;
