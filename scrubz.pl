@@ -15,6 +15,7 @@ my $columnDefFile = "columndefs.txt";
 my $numThreads = 8; # how many files to be processed in parallel (use number of cores)
 my $recordBufferSize = 10000; # how many records to be written out at once
 my $delimeter = '|';
+my $decompressInput = 0;
 my $compressOutput = 0;
 
 my @processingTimes:shared = ();
@@ -70,11 +71,15 @@ sub Process_File {
 
 		(my $outFile = $inFile) =~ s/$sourceDir/$processedDir/;
 
-
 		# open the in and out files using Gunzip and Gzip,
 		# this allows the files to be streamed directly from
 		# and in to compressed files.
-		my $inHandle = new IO::Uncompress::Gunzip $inFile;
+		my $inHandle;
+		if($decompressInput) {
+			$inHandle = new IO::Uncompress::Gunzip $inFile;
+		} else {
+			open($inHandle, '<', $inFile);
+		}
 
 		my $outHandle;
 		if($compressOutput) {
