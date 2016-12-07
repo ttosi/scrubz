@@ -14,13 +14,13 @@ my @processingTimes:shared = ();
 my $soureDir = "source";
 my $processedDir = "processed";
 
-local $| = 1; # turn on auto-flush so console output is displayed immediately
+local $| = 8; # turn on auto-flush so console output is displayed immediately
 my $start = time; # start the execution timer
-#$/ = "\r\n";
 
 my @files:shared = glob($soureDir . '/*.txt'); # get list of files in the soureDir
 my @threads = 1..$numThreads; # create array that holds the number of threads defined
 my $numFiles = scalar(@files);
+my $template;
 
 print "Processing $numFiles files using $numThreads threads\n";
 my $t = localtime;
@@ -35,16 +35,16 @@ open(my $fh, "<", "columndefs.txt");
 while(<$fh>) {
 	chomp;
 	my($columnName, $index) = split(':', $_, 2);
-	print "$index\n";
-	#chomp($columnName);
+
 	push(@columnNames, $columnName);
 	push(@columnIndexes, $index);
 }
 close($fh);
 
-
 my $header = join $delimeter, @columnNames;
 chomp($header);
+
+$template = "A" . join "A", @columnIndexes;
 
 # create and start the threads
 foreach(@threads) {
@@ -101,30 +101,15 @@ sub Process_File {
 	}
 }
 
-# primary processing logic for a single record.
-# this routine will replace the values *inline*.
-# no memory is wasted allocating memory for a new record.
+# todo comment
 sub Process_Record {
-	my $record = shift;
-	my $outRecord;
-	my @elements;
+	my $line = shift;
+	my ($pan, @data) = unpack($template, $line);
 
-	my $pan = substr($record, 0, 19); # get the card number
-	$pan =~ s/\s+$//; # right trim
+	$line = join '|', @data;
 	my $hashedPan = uc sha512_hex($salt . $pan);
-	push(@elements, $hashedPan);
 
-	my $runningIndex = 19;
-	for (1 .. $#columnIndexes) {
-		my $data = substr($record, $runningIndex, $columnIndexes[$_]);
-		$data =~ s/\s+$//;
-
-		push(@elements, $data);
-		$runningIndex += $columnIndexes[$_];
-	}
-
-	$outRecord = join $delimeter, @elements;
-	return $outRecord . "\n";
+	return $hashedPan . '|' . $line . "\n";
 }
 
 my $totalFileProcessingTime = 0;
