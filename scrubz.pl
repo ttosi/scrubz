@@ -4,18 +4,22 @@ use warnings;
 use threads;
 use threads::shared;
 use Digest::SHA qw(sha512_hex);
+#use IO::Compress::Gzip;
+#use IO::Uncompress::Gunzip;
 
-my $numThreads = 8; # how many files to be processed in parallel (use number of cores)
-my $recordBufferSize = 10000; # how many records to be written out at once
 my $salt = "c058da7699634fb1a927ab65d031c45c5d5a2b7b2ab24bd191989cd2362884d1";
-my $delimeter = '|';
-my @processingTimes:shared = ();
-my @columnNames;
-my @columnIndexes;
-
 my $sourceDir = "source";
 my $processedDir = "processed";
 my $columnDefFile = "columndefs.txt";
+
+my $numThreads = 8; # how many files to be processed in parallel (use number of cores)
+my $recordBufferSize = 10000; # how many records to be written out at once
+my $delimeter = '|';
+my $compressFiles = 1;
+
+my @processingTimes:shared = ();
+my @columnNames;
+my @columnIndexes;
 
 local $| = 8; # turn on auto-flush so console output is displayed immediately
 my $start = time; # start the execution timer
@@ -43,7 +47,7 @@ close($fh);
 my $header = join $delimeter, @columnNames;
 chomp($header);
 
-# create the template used to process
+# create the template used by the unpack call
 $template = "A" . join "A", @columnIndexes;
 
 # create and start the threads
@@ -75,14 +79,10 @@ sub Process_File {
 		# loop through the records
 		while(<INFILE>) {
 			# process the current record and push it onto the buffer
-			#my $record = Process_Record($_);
-
 			my ($pan, @data) = unpack($template, $_);
-
 			$_ = join '|', @data;
-			my $hashedPan = uc sha512_hex($salt . $pan);
 
-			#return $hashedPan . '|' . $_ . "\n";
+			my $hashedPan = uc sha512_hex($salt . $pan);
 
 			push(@recordBuffer, $hashedPan . '|' . $_ . "\n");
 
@@ -99,26 +99,22 @@ sub Process_File {
 			print OUTFILE @recordBuffer;
 		}
 
-		close(OUTFILE);
 		close(INFILE);
+
+		if($compressFiles) {
+			open (OUTFILE, "| gzip -c > $outFile.gz");
+			unlink($outFile);
+		}
+
+		close(OUTFILE);
 
 		my $processingTime = (time - $fileTime) / 60;
 		push(@processingTimes, $processingTime);
 
-		printf "%.2f mins (%.2f mins)\n", (time - $start) / 60, $processingTime;
+		$outFile =~ s/$processedDir\///;
+		printf "-- $outFile processed in %.2f mins (%s compression) \n", $processingTime, $compressFiles ? 'with' : 'without';
 	}
 }
-
-# todo comment
-# sub Process_Record {
-# 	my $line = shift;
-# 	my ($pan, @data) = unpack($template, $line);
-#
-# 	$line = join '|', @data;
-# 	my $hashedPan = uc sha512_hex($salt . $pan);
-#
-# 	return $hashedPan . '|' . $line . "\n";
-# }
 
 my $totalFileProcessingTime = 0;
 foreach(@processingTimes) {
@@ -127,5 +123,5 @@ foreach(@processingTimes) {
 
 my $duration = (time - $start) / 60;
 
-printf "Average file processed time %.2f minutes\n", $totalFileProcessingTime / $numFiles;
-printf "Processing completed in %.2f minutes\n", $duration;
+printf "Average file processing time %.2f minutes\n", $totalFileProcessingTime / $numFiles;
+printf "Run cmpleted in %.2f minutes\n", $duration;
