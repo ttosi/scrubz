@@ -15,10 +15,9 @@ my $columnDefFile = "columndefs.txt";
 my $numThreads = 8; # how many files to be processed in parallel (use number of cores)
 my $recordBufferSize = 10000; # how many records to be written out at once
 my $delimeter = '|';
-my $decompressInput = 0;
-my $compressOutput = 0;
+my $isInputFileCompressed = 1;
+my $writeCompressedOutputFile = 0;
 
-my @processingTimes:shared = ();
 my @columnNames;
 my @columnIndexes;
 
@@ -66,23 +65,25 @@ sub Process_File {
 	# to pop a file until they are all processed
 	while(scalar(@files) != 0) {
 		my $inFile = pop(@files);
+
 		my @recordBuffer;
 		my $fileTime = time; # start the per file processing timer
 
 		(my $outFile = $inFile) =~ s/$sourceDir/$processedDir/;
 
-		# open the in and out files using Gunzip and Gzip,
-		# this allows the files to be streamed directly from
-		# and in to compressed files.
+		# when configured open the in and out files using Gunzip
+		# and Gzip, this allows the files to be streamed directly
+		# from and in to compressed files; otherwise open and/or
+		# write normally
 		my $inHandle;
-		if($decompressInput) {
+		if($isInputFileCompressed) {
 			$inHandle = new IO::Uncompress::Gunzip $inFile;
 		} else {
 			open($inHandle, '<', $inFile);
 		}
 
 		my $outHandle;
-		if($compressOutput) {
+		if($writeCompressedOutputFile) {
 			$outHandle = new IO::Compress::Gzip $outFile;
 		} else {
 			$outFile =~ s/.gz//;
@@ -119,20 +120,9 @@ sub Process_File {
 		close($outHandle);
 		close($inHandle);
 
-		my $processingTime = (time - $fileTime) / 60;
-		push(@processingTimes, $processingTime);
-
 		$outFile =~ s/$processedDir\///;
-		printf "-- $outFile processed in %.2f mins\n", $processingTime;
+		printf "-- $outFile processed in %.2f mins\n", (time - $fileTime) / 60;
 	}
 }
 
-my $totalFileProcessingTime = 0;
-foreach(@processingTimes) {
-	$totalFileProcessingTime += $_;
-}
-
-my $duration = (time - $start) / 60;
-
-printf "Average file processing time %.2f minutes\n", $totalFileProcessingTime / $numFiles;
-printf "Run cmpleted in %.2f minutes\n", $duration;
+printf "Run completed in %.2f minutes\n", (time - $start) / 60;
