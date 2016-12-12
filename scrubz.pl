@@ -107,7 +107,7 @@ sub Process_File {
 			# only write to disk every N records
 			if(scalar(@recordBuffer) == $recordBufferSize) {
 				print $outHandle @recordBuffer;
-				@recordBuffer = ();
+				@recordBuffer = ();Proj
 			}
 		}
 
