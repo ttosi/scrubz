@@ -15,25 +15,31 @@ my $columnDefFile = "columndefs.txt";
 my $numThreads = 8; # how many files to be processed in parallel
 my $recordBufferSize = 10000; # how many records to be written out at once
 my $delimeter = '|';
-my $isInputFileCompressed = 1;
+my $isInputFileCompressed = 0;
 my $writeCompressedOutputFile = 0;
 
 my @columnNames;
 my @columnIndexes;
 
-my $| = 8; # turn on auto-flush so console output is displayed immediately
+local $| = 8; # turn on auto-flush so console output is displayed immediately
 my $start = time; # start the execution timer
 
-my @files:shared = glob($sourceDir . '/*'); # get list of files in the soureDir
 my @threads = 1..$numThreads; # create array that holds the number of threads defined
-my $numFiles = scalar(@files);
 my $template;
 
+my @files:shared = glob($sourceDir . '/*'); # get list of files in the soureDir
+my $numFiles = scalar(@files);
+
 print "Processing $numFiles files using $numThreads threads\n";
+for(@files) {
+	my $size = (-s $_) / 1024 / 1024 / 1024; #convert bytes to gb
+	printf "-- $_: %d gb\n", $size;
+}
+
 my $t = localtime;
 print "Started at $t\n";
 
-# read in column definitions and
+# read in column definitions
 open(my $colDefHandle, "<", $columnDefFile);
 while(<$colDefHandle>) {
 	chomp;
@@ -99,7 +105,7 @@ sub Process_File {
 			my ($pan, @data) = unpack($template, $_);
 			$_ = join '|', @data;
 
-			# hash the pan, salt first
+			# hash the pan (prepend salt)
 			my $hashedPan = uc sha512_hex($salt . $pan);
 
 			push(@recordBuffer, $hashedPan . '|' . $_ . "\n");

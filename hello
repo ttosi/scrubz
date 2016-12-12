@@ -1,0 +1,11 @@
+total 56
+drwxrwxr-x  5 ttosi ttosi  4096 Dec  8 21:11 .
+drwxr-xr-x 54 ttosi ttosi  4096 Dec  9 16:17 ..
+-rw-rw-r--  1 ttosi ttosi  2173 Dec  6 13:27 columndefs.txt
+-rw-rw-r--  1 ttosi ttosi   339 Dec  9 12:21 createtestrecords.pl
+drwxrwxr-x  8 ttosi ttosi  4096 Dec  8 21:12 .git
+-rw-rw-r--  1 ttosi ttosi    29 Dec  5 12:28 .gitignore
+drwxrwxr-x  2 ttosi ttosi  4096 Dec  9 16:38 processed
+-rwxrwxr-x  1 ttosi ttosi  3515 Dec  9 16:36 scrubz.pl
+drwxrwxr-x  2 ttosi ttosi  4096 Dec  9 12:21 source
+-rw-rw-r--  1 ttosi ttosi 18935 Dec  7 14:13 testdata.txt
