@@ -9,9 +9,9 @@ my $file = <FILE>;
 close(FILE);
 
 for(1..1) {
-	open(OUT, ">>source/data$_.txt");
+	open(OUT, ">source/data$_.txt");
 
-	for(1..5625000) { # 900000 = 16GB files
+	for(1..56500 * 50) { # 900000 = 16GB, 5625000 = 100GB
 		print OUT $file;
 	}
 	close(OUT);
@@ -19,3 +19,6 @@ for(1..1) {
 }
 
 print "DONE\n";
+
+
+#0.000019gb
