@@ -122,7 +122,7 @@ sub Process_File {
 			#print "''$hashedPan'\n";
 			#print "$hashedPan $rest\n";
 
-			push(@recordBuffer, "$hashedPan $rest\n");
+			push(@recordBuffer, "$hashedPan   $rest\n");
 
 			# only write to disk every N records
 			if(scalar(@recordBuffer) == $recordBufferSize) {
