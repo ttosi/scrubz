@@ -1,4 +1,4 @@
-#! /usr/bin/perl/bin/perl
+#! /usr/bin/perl
 use strict;
 use warnings;
 use threads;
@@ -15,6 +15,7 @@ my $columnDefFile = "columndefs.txt";
 my $numThreads = 8; # how many files to be processed in parallel
 my $recordBufferSize = 10000; # how many records to be written out at once
 my $delimitFile = 0;
+my $includeHeader = 0;
 my $isInputFileCompressed = 0;
 my $writeCompressedOutputFile = 0;
 my $delimeter = '|';
@@ -64,9 +65,6 @@ if($delimitFile) {
 	$template = "A19A" . ($rest - 19);
 }
 
-print "$rest\n";
-print "$template\n";
-
 # create and start the threads
 foreach(@threads) {
 	$_ = threads->create("Process_File");
@@ -108,7 +106,9 @@ sub Process_File {
 		}
 
 		# write out column headers
-		print $outHandle "$header\n";
+		if($includeHeader) {
+			print $outHandle "$header\n";
+		}
 
 		# loop through the records
 		while(<$inHandle>) {
