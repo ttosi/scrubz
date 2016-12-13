@@ -14,9 +14,11 @@ my $columnDefFile = "columndefs.txt";
 
 my $numThreads = 8; # how many files to be processed in parallel
 my $recordBufferSize = 10000; # how many records to be written out at once
-my $delimeter = '|';
+my $delimitFile = 0;
 my $isInputFileCompressed = 0;
 my $writeCompressedOutputFile = 0;
+my $delimeter = '|';
+
 
 my @columnNames;
 my @columnIndexes;
@@ -51,10 +53,19 @@ while(<$colDefHandle>) {
 close($colDefHandle);
 
 my $header = join $delimeter, @columnNames;
+my $rest = 0;
 chomp($header);
 
 # create the template used by the unpack call
-$template = "A" . join "A", @columnIndexes;
+if($delimitFile) {
+	$template = "A" . join "A", @columnIndexes;
+} else {
+	$rest += $_ for @columnIndexes;
+	$template = "A19A" . ($rest - 19);
+}
+
+print "$rest\n";
+print "$template\n";
 
 # create and start the threads
 foreach(@threads) {
@@ -102,18 +113,21 @@ sub Process_File {
 		# loop through the records
 		while(<$inHandle>) {
 			# process the current record and push it onto the buffer
-			my ($pan, @data) = unpack($template, $_);
-			$_ = join '|', @data;
+			my ($pan, $rest) = unpack($template, $_);
+			#print "'$pan'\n";
+			#$_ = join '|', @data;
 
 			# hash the pan (prepend salt)
 			my $hashedPan = uc sha512_hex($salt . $pan);
+			#print "''$hashedPan'\n";
+			#print "$hashedPan $rest\n";
 
-			push(@recordBuffer, $hashedPan . '|' . $_ . "\n");
+			push(@recordBuffer, "$hashedPan $rest\n");
 
 			# only write to disk every N records
 			if(scalar(@recordBuffer) == $recordBufferSize) {
 				print $outHandle @recordBuffer;
-				@recordBuffer = ();Proj
+				@recordBuffer = ();
 			}
 		}
 
