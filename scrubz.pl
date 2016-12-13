@@ -20,7 +20,6 @@ my $isInputFileCompressed = 0;
 my $writeCompressedOutputFile = 0;
 my $delimeter = '|';
 
-
 my @columnNames;
 my @columnIndexes;
 
@@ -33,7 +32,7 @@ my $template;
 my @files:shared = glob($sourceDir . '/*'); # get list of files in the soureDir
 my $numFiles = scalar(@files);
 
-print "Processing $numFiles files using $numThreads threads\n";
+print "Processing $numFiles file(s) using $numThreads threads\n";
 for(@files) {
 	my $size = (-s $_) / 1024 / 1024 / 1024; #convert bytes to gb
 	printf "-- $_: %d gb\n", $size;
@@ -110,10 +109,18 @@ sub Process_File {
 			print $outHandle "$header\n";
 		}
 
+
 		# loop through the records
 		while(<$inHandle>) {
+			my ($pan, @data, $rest);
+
 			# process the current record and push it onto the buffer
-			my ($pan, $rest) = unpack($template, $_);
+			if($delimitFile) {
+				($pan, @data) = unpack($template, $_);
+				$_ = join '|', @data;
+			} else {
+				($pan, $rest) = unpack($template, $_);
+			}
 			#print "'$pan'\n";
 			#$_ = join '|', @data;
 
@@ -122,7 +129,11 @@ sub Process_File {
 			#print "''$hashedPan'\n";
 			#print "$hashedPan $rest\n";
 
-			push(@recordBuffer, "$hashedPan   $rest\n");
+			if($delimitFile) {
+				push(@recordBuffer, $hashedPan . '|' . $_ . "\n");
+			} else {
+				push(@recordBuffer, "$hashedPan   $rest\n");
+			}
 
 			# only write to disk every N records
 			if(scalar(@recordBuffer) == $recordBufferSize) {
