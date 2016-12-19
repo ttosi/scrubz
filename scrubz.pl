@@ -6,6 +6,7 @@ use threads::shared;
 use Digest::SHA qw(sha512_hex);
 use IO::Compress::Gzip qw(gzip $GzipError);
 use IO::Uncompress::Gunzip;
+use utf8;
 
 my $salt = "c058da7699634fb1a927ab65d031c45c5d5a2b7b2ab24bd191989cd2362884d1";
 my $sourceDir = "source";
@@ -103,6 +104,8 @@ sub Process_File {
 			$outFile =~ s/.gz//;
 			open($outHandle, '>', $outFile);
 		}
+
+		binmode($outHandle, ":utf8");
 
 		# write out column headers
 		if($includeHeader) {
