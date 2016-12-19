@@ -82,14 +82,14 @@ sub Process_File {
 	# to pop a file until they are all processed
 	while(scalar(@files) != 0) {
 		my $inFile = pop(@files);
+		my $fileIndex = 1;
 
 		for(1..$lineCountToChunkOn) {
-			my @recordBuffer;
+			my @recordBuffer = ();
 			my $subDirectory = basename(substr($inFile, 0, index($inFile, '.')));
 
 
 			print "$subDirectory\n\n";
-			my $fileIndex = 1;
 			my $fileTime = time; # start the per file processing timer
 
 			(my $outFile = $inFile) =~ s/$sourceDir/$processedDir\/$subDirectory/;
