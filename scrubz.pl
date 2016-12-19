@@ -17,8 +17,8 @@ my $columnDefFile = "columndefs.txt";
 
 my $numThreads = 8; # how many files to be processed in parallel
 
-my $recordBufferSize = 500; # how many records to be written out at once
-my $numLinesToSplitOn = 1000; # numLinesToSplitOn MUST BE > recordBufferSize
+my $recordBufferSize = 10000; # how many records to be written out at once
+my $numLinesToSplitOn = 2475000; # numLinesToSplitOn MUST BE > recordBufferSize
 
 my $delimitFile = 0;
 my $includeHeader = 0;
@@ -115,11 +115,11 @@ sub Process_File {
 		##########
 
 		# loop through the records
-		my $lineCount = 1;
+		my $lineCount;
 		my $fileIndex = 0;
 
 		while(<$inHandle>) {
-			if($fileIndex == 0 or $lineCount == $numLinesToSplitOn) {
+			if($fileIndex == 0 or $lineCount >= $numLinesToSplitOn) {
 				my $outFile = basename($inFile);
 
 				$lineCount = 1;
