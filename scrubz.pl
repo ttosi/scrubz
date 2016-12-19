@@ -9,19 +9,21 @@ use IO::Uncompress::Gunzip;
 use File::Basename;
 use File::Path qw/make_path/;
 
+#### START CONFIG ###
 my $salt = "c058da7699634fb1a927ab65d031c45c5d5a2b7b2ab24bd191989cd2362884d1";
 my $sourceDir = "source";
 my $processedDir = "processed";
 my $columnDefFile = "columndefs.txt";
 
 my $numThreads = 8; # how many files to be processed in parallel
-my $recordBufferSize = 10000; # how many records to be written out at once
+
+my $recordBufferSize = 500; # how many records to be written out at once
+my $numLinesToSplitOn = 1000; # numLinesToSplitOn MUST BE > recordBufferSize
+
 my $delimitFile = 0;
 my $includeHeader = 0;
 my $delimeter = '|';
-my $isInputFileCompressed = 0;
-my $writeCompressedOutputFile = 0;
-my $lineCountToChunkOn = 225000;
+#### END CONFIG ###
 
 my @columnNames;
 my @columnIndexes;
@@ -82,85 +84,94 @@ sub Process_File {
 	# to pop a file until they are all processed
 	while(scalar(@files) != 0) {
 		my $inFile = pop(@files);
-		my $fileIndex = 1;
 		my $fileTime = time; # start the per file processing timer
+		my $inHandle;
+		my $outHandle;
+		my @recordBuffer;
 
-		for(1..$lineCountToChunkOn) {
-			my @recordBuffer = ();
-			my $subDirectory = basename(substr($inFile, 0, index($inFile, '.')));
+		my $path = $processedDir . "/" . basename(substr($inFile, 0, index($inFile, '.')));
+		make_path($path);
 
-			(my $outFile = $inFile) =~ s/$sourceDir/$processedDir\/$subDirectory/;
+		# when configured open the in and out files using Gunzip
+		# and Gzip, this allows the files to be streamed directly
+		# from and in to compressed files; otherwise open and/or
+		# write normally
+		open($inHandle, '<', $inFile);
 
-			# create the subDirectory based on the source filename
-			# and change filename to use the fileIndex
-			make_path(dirname($outFile));
-			$outFile =~ s/\./_$fileIndex\./;
 
-			# when configured open the in and out files using Gunzip
-			# and Gzip, this allows the files to be streamed directly
-			# from and in to compressed files; otherwise open and/or
-			# write normally
-			my $inHandle;
-			if($isInputFileCompressed) {
-				$inHandle = new IO::Uncompress::Gunzip $inFile;
-			} else {
-				open($inHandle, '<', $inFile);
-			}
 
-			my $outHandle;
-			if($writeCompressedOutputFile) {
-				$outHandle = new IO::Compress::Gzip $outFile;
-			} else {
-				$outFile =~ s/.gz//;
+		# write out column headers
+		# if($includeHeader) {
+		# 	print $outHandle "$header\n";
+		# }
+
+		###########
+
+		#(my $outFile = $inFile) =~ s/$sourceDir/$processedDir\/$subDirectory/;
+
+		#$outFile =~ s/\./_$fileIndex\./;
+		#print "\n\n$outFile\n\n";
+
+		##########
+
+		# loop through the records
+		my $lineCount = 1;
+		my $fileIndex = 0;
+
+		while(<$inHandle>) {
+			if($fileIndex == 0 or $lineCount == $numLinesToSplitOn) {
+				my $outFile = basename($inFile);
+
+				$lineCount = 1;
+				$fileIndex++;
+
+				print "$fileIndex\n";
+
+				$outFile =~ s/\./_$fileIndex\./;
+				$outFile = $path . "/" . $outFile;
+
+				print "\n\n$outFile\n\n";
+
 				open($outHandle, '>:encoding(UTF-8)', $outFile);
+				binmode($outHandle, ":utf8");
 			}
 
-			binmode($outHandle, ":utf8");
+			my ($pan, @data, $rest);
 
-			# write out column headers
-			if($includeHeader) {
-				print $outHandle "$header\n";
+			# process the current record and push it onto the buffer
+			if($delimitFile) {
+				($pan, @data) = unpack($template, $_);
+				$_ = join '|', @data;
+			} else {
+				($pan, $rest) = unpack($template, $_);
 			}
 
-			# loop through the records
-			while(<$inHandle>) {
-				my ($pan, @data, $rest);
+			# hash the pan (prepend the salt)
+			my $hashedPan = uc sha512_hex($salt . $pan);
 
-				# process the current record and push it onto the buffer
-				if($delimitFile) {
-					($pan, @data) = unpack($template, $_);
-					$_ = join '|', @data;
-				} else {
-					($pan, $rest) = unpack($template, $_);
-				}
-
-				# hash the pan (prepend the salt)
-				my $hashedPan = uc sha512_hex($salt . $pan);
-
-				if($delimitFile) {
-					push(@recordBuffer, $hashedPan . '|' . $_ . "\n");
-				} else {
-					push(@recordBuffer, "$hashedPan   $rest\n");
-				}
-
-				# only write to disk every N records
-				if(scalar(@recordBuffer) == $recordBufferSize) {
-					print $outHandle @recordBuffer;
-					@recordBuffer = ();
-				}
+			if($delimitFile) {
+				push(@recordBuffer, $hashedPan . '|' . $_ . "\n");
+			} else {
+				push(@recordBuffer, "$hashedPan   $rest\n");
 			}
 
-			# when the loop has finsihed, write out anything
-			# left over in the buffer
-			if(scalar(@recordBuffer) > 0) {
+			# only write to disk every N records
+			if(scalar(@recordBuffer) == $recordBufferSize) {
 				print $outHandle @recordBuffer;
+				@recordBuffer = ();
 			}
 
-			close($outHandle);
-			close($inHandle);
-
-			$fileIndex++;
+			$lineCount++;
 		}
+
+		# when the loop has finsihed, write out anything
+		# left over in the buffer
+		if(scalar(@recordBuffer) > 0) {
+			print $outHandle @recordBuffer;
+		}
+
+		close($outHandle);
+		close($inHandle);
 
 		# $outFile =~ s/$processedDir\///;
 		# printf "-- $outFile processed in %.2f mins\n", (time - $fileTime) / 60;
