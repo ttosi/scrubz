@@ -18,7 +18,8 @@ my $columnDefFile = "columndefs.txt";
 my $numThreads = 8; # how many files to be processed in parallel
 
 my $recordBufferSize = 10000; # how many records to be written out at once
-my $numLinesToSplitOn = 2475000; # numLinesToSplitOn MUST BE > recordBufferSize
+# my $numLinesToSplitOn = 30937500; # about 50GB
+my $numLinesToSplitOn = 2475000; # about 4GB
 
 my $delimitFile = 0;
 my $includeHeader = 0;
