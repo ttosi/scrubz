@@ -11,7 +11,7 @@ close(FILE);
 for(1..1) {
 	open(OUT, ">source/data$_.txt");
 
-	for(1..1 * 1) { # 900000 = 16GB, 5625000 = 100GB
+	for(1..900000) { # 900000 = 16GB, 5625000 = 100GB, 2812500 = 50GB
 		print OUT $file;
 	}
 	close(OUT);
