@@ -17,7 +17,7 @@ my $columnDefFile = "columndefs.txt";
 
 my $numThreads = 8; # how many files to be processed in parallel
 
-my $recordBufferSize = 500; # how many records to be written out at once
+my $recordBufferSize = 00; # how many records to be written out at once
 my $numLinesToSplitOn = 1000; # numLinesToSplitOn MUST BE > recordBufferSize
 
 my $delimitFile = 0;
@@ -98,39 +98,26 @@ sub Process_File {
 		# write normally
 		open($inHandle, '<', $inFile);
 
-
-
 		# write out column headers
-		# if($includeHeader) {
-		# 	print $outHandle "$header\n";
-		# }
-
-		###########
-
-		#(my $outFile = $inFile) =~ s/$sourceDir/$processedDir\/$subDirectory/;
-
-		#$outFile =~ s/\./_$fileIndex\./;
-		#print "\n\n$outFile\n\n";
-
-		##########
+		if($includeHeader) {
+			print $outHandle "$header\n";
+		}
 
 		# loop through the records
-		my $lineCount = 1;
+		my $lineCount;
 		my $fileIndex = 0;
 
 		while(<$inHandle>) {
-			if($fileIndex == 0 or $lineCount == $numLinesToSplitOn) {
+			if($fileIndex == 0 or $lineCount >= $numLinesToSplitOn) {
 				my $outFile = basename($inFile);
 
-				$lineCount = 1;
+				$lineCount = 0;
 				$fileIndex++;
-
-				print "$fileIndex\n";
 
 				$outFile =~ s/\./_$fileIndex\./;
 				$outFile = $path . "/" . $outFile;
 
-				print "\n\n$outFile\n\n";
+				print "$outFile\n";
 
 				open($outHandle, '>:encoding(UTF-8)', $outFile);
 				binmode($outHandle, ":utf8");
