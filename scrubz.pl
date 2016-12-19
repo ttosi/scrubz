@@ -17,9 +17,10 @@ my $columnDefFile = "columndefs.txt";
 
 my $numThreads = 8; # how many files to be processed in parallel
 
+####----->>>> $numLinesToSplitOn MUST BE GREATER THAN $recordBufferSize <<<-----####
 my $recordBufferSize = 10000; # how many records to be written out at once
-# my $numLinesToSplitOn = 30937500; # about 50GB
-my $numLinesToSplitOn = 2475000; # about 4GB
+my $numLinesToSplitOn = 30937500; # about 50GB
+#my $numLinesToSplitOn = 2475000; # about 4GB
 
 my $delimitFile = 0;
 my $includeHeader = 0;
@@ -41,7 +42,7 @@ my $numFiles = scalar(@files);
 print "Processing $numFiles file(s) using $numThreads threads\n";
 for(@files) {
 	my $size = (-s $_) / 1024 / 1024 / 1024; #convert bytes to gb
-	printf "-- $_: %d gb\n", $size;
+	printf "-- $_: %dGB\n", $size;
 }
 
 my $t = localtime;
@@ -111,14 +112,11 @@ sub Process_File {
 		while(<$inHandle>) {
 			if($fileIndex == 0 or $lineCount >= $numLinesToSplitOn) {
 				my $outFile = basename($inFile);
-
 				$lineCount = 0;
 				$fileIndex++;
 
 				$outFile =~ s/\./_$fileIndex\./;
 				$outFile = $path . "/" . $outFile;
-
-				print "$outFile\n";
 
 				open($outHandle, '>:encoding(UTF-8)', $outFile);
 				binmode($outHandle, ":utf8");
@@ -161,8 +159,8 @@ sub Process_File {
 		close($outHandle);
 		close($inHandle);
 
-		# $outFile =~ s/$processedDir\///;
-		# printf "-- $outFile processed in %.2f mins\n", (time - $fileTime) / 60;
+		my $inFileName =~ basename($inFile);
+		printf "-- $inFileName processed in %.2f mins\n", (time - $fileTime) / 60;
 	}
 }
 
