@@ -83,14 +83,11 @@ sub Process_File {
 	while(scalar(@files) != 0) {
 		my $inFile = pop(@files);
 		my $fileIndex = 1;
+		my $fileTime = time; # start the per file processing timer
 
 		for(1..$lineCountToChunkOn) {
 			my @recordBuffer = ();
 			my $subDirectory = basename(substr($inFile, 0, index($inFile, '.')));
-
-
-			print "$subDirectory\n\n";
-			my $fileTime = time; # start the per file processing timer
 
 			(my $outFile = $inFile) =~ s/$sourceDir/$processedDir\/$subDirectory/;
 
@@ -98,7 +95,6 @@ sub Process_File {
 			# and change filename to use the fileIndex
 			make_path(dirname($outFile));
 			$outFile =~ s/\./_$fileIndex\./;
-			print "\n\n$outFile\n\n";
 
 			# when configured open the in and out files using Gunzip
 			# and Gzip, this allows the files to be streamed directly
