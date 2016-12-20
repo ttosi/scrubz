@@ -4,8 +4,6 @@ use warnings;
 use threads;
 use threads::shared;
 use Digest::SHA qw(sha512_hex);
-use IO::Compress::Gzip qw(gzip $GzipError);
-use IO::Uncompress::Gunzip;
 use File::Basename;
 use File::Path qw/make_path/;
 
@@ -159,7 +157,7 @@ sub Process_File {
 		close($outHandle);
 		close($inHandle);
 
-		my $inFileName =~ basename($inFile);
+		my $inFileName = basename($inFile);
 		printf "-- $inFileName processed in %.2f mins\n", (time - $fileTime) / 60;
 	}
 }
