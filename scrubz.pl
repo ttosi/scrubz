@@ -11,7 +11,8 @@ use File::Path qw/make_path/;
 my $salt = "c058da7699634fb1a927ab65d031c45c5d5a2b7b2ab24bd191989cd2362884d1";
 my $sourceDir = "source";
 my $processedDir = "processed";
-my $columnDefFile = "columndefs.txt";
+#my $columnDefFile = "columndefs.txt";
+my $columnDefFile = "columndefs_hourly.txt";
 
 my $numThreads = 8; # how many files to be processed in parallel
 
